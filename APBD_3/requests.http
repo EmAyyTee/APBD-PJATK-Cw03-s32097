@@ -1,0 +1,173 @@
+﻿@baseUrl = http://localhost:5057
+
+### Wszystkie sale
+GET {{baseUrl}}/api/rooms
+
+### Jedna sala po id
+GET {{baseUrl}}/api/rooms/1
+
+### Nieistniejąca sala
+GET {{baseUrl}}/api/rooms/999
+
+### Sale po budynku
+GET {{baseUrl}}/api/rooms/building/B
+
+### Filtrowanie sal
+GET {{baseUrl}}/api/rooms?minCapacity=20&hasProjector=true&activeOnly=true
+
+### Dodanie sali
+POST {{baseUrl}}/api/rooms
+Content-Type: application/json
+
+{
+  "name": "Sala testowa",
+  "buildingCode": "D",
+  "floor": 1,
+  "capacity": 16,
+  "hasProjector": true,
+  "isActive": true
+}
+
+### Aktualizacja sali
+PUT {{baseUrl}}/api/rooms/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Sala 101 po remoncie",
+  "buildingCode": "A",
+  "floor": 1,
+  "capacity": 20,
+  "hasProjector": true,
+  "isActive": true
+}
+
+### Usunięcie sali bez rezerwacji
+### Ten request zakłada, że wcześniej dodana sala dostała id = 6
+DELETE {{baseUrl}}/api/rooms/6
+
+### Próba usunięcia sali z rezerwacjami
+DELETE {{baseUrl}}/api/rooms/2
+
+### Wszystkie rezerwacje
+GET {{baseUrl}}/api/reservations
+
+### Jedna rezerwacja po id
+GET {{baseUrl}}/api/reservations/1
+
+### Nieistniejąca rezerwacja
+GET {{baseUrl}}/api/reservations/999
+
+### Filtrowanie rezerwacji
+GET {{baseUrl}}/api/reservations?date=2026-05-10&status=confirmed&roomId=2
+
+### Dodanie poprawnej rezerwacji
+### Ustawione na 15:00-16:00, żeby nie kolidowało z danymi startowymi
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "roomId": 1,
+  "organizerName": "Katarzyna Maj",
+  "topic": "Konsultacje z programowania",
+  "date": "2026-05-10",
+  "startTime": "15:00:00",
+  "endTime": "16:00:00",
+  "status": "confirmed"
+}
+
+### Dodanie rezerwacji z konfliktem czasowym
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "roomId": 2,
+  "organizerName": "Anna Kowalska",
+  "topic": "Kolidujące warsztaty",
+  "date": "2026-05-10",
+  "startTime": "11:00:00",
+  "endTime": "13:00:00",
+  "status": "confirmed"
+}
+
+### Rezerwacja dla nieistniejącej sali
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "roomId": 999,
+  "organizerName": "Adam Testowy",
+  "topic": "Rezerwacja nieistniejącej sali",
+  "date": "2026-05-10",
+  "startTime": "13:00:00",
+  "endTime": "14:00:00",
+  "status": "planned"
+}
+
+### Rezerwacja dla nieaktywnej sali
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "roomId": 4,
+  "organizerName": "Adam Testowy",
+  "topic": "Rezerwacja nieaktywnej sali",
+  "date": "2026-05-10",
+  "startTime": "13:00:00",
+  "endTime": "14:00:00",
+  "status": "planned"
+}
+
+### Rezerwacja z błędnym czasem
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "roomId": 1,
+  "organizerName": "Adam Testowy",
+  "topic": "Błędny czas",
+  "date": "2026-05-10",
+  "startTime": "14:00:00",
+  "endTime": "13:00:00",
+  "status": "planned"
+}
+
+### Aktualizacja rezerwacji
+### Ustawione na 12:00-13:00, żeby nie kolidowało z rezerwacją 15:00-16:00
+PUT {{baseUrl}}/api/reservations/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "roomId": 1,
+  "organizerName": "Jan Nowak",
+  "topic": "Podstawy C# - aktualizacja",
+  "date": "2026-05-10",
+  "startTime": "12:00:00",
+  "endTime": "13:00:00",
+  "status": "confirmed"
+}
+
+### Aktualizacja powodująca konflikt
+PUT {{baseUrl}}/api/reservations/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "roomId": 2,
+  "organizerName": "Jan Nowak",
+  "topic": "Konflikt przy aktualizacji",
+  "date": "2026-05-10",
+  "startTime": "11:00:00",
+  "endTime": "12:00:00",
+  "status": "confirmed"
+}
+
+### Usunięcie rezerwacji
+DELETE {{baseUrl}}/api/reservations/5
+
+### Sprawdzenie, czy rezerwacja została usunięta
+GET {{baseUrl}}/api/reservations/5
+
+### Usunięcie nieistniejącej rezerwacji
+DELETE {{baseUrl}}/api/reservations/999
