@@ -48,4 +48,61 @@ public class ReservationsController : ControllerBase
 
         return Ok(reservation);
     }
+
+    [HttpPost]
+    public ActionResult<Reservation> CreateReservation([FromBody] Reservation reservation)
+    {
+        var room = InMemoryDataStore.Rooms
+            .FirstOrDefault(room => room.Id == reservation.RoomId);
+
+        if (room is null)
+        {
+            return BadRequest($"Room with id {reservation.RoomId} does not exist.");
+        }
+
+        if (!room.IsActive)
+        {
+            return BadRequest($"Room with id {reservation.RoomId} is not active.");
+        }
+
+        var hasTimeConflict = InMemoryDataStore.Reservations.Any(existingReservation =>
+            existingReservation.RoomId == reservation.RoomId &&
+            existingReservation.Date == reservation.Date &&
+            !existingReservation.Status.Equals("cancelled", StringComparison.OrdinalIgnoreCase) &&
+            ReservationTimesOverlap(
+                reservation.StartTime,
+                reservation.EndTime,
+                existingReservation.StartTime,
+                existingReservation.EndTime
+            )
+        );
+
+        if (hasTimeConflict)
+        {
+            return Conflict("Reservation conflicts with an existing reservation for the same room.");
+        }
+
+        var newId = InMemoryDataStore.Reservations.Any()
+            ? InMemoryDataStore.Reservations.Max(existingReservation => existingReservation.Id) + 1
+            : 1;
+
+        reservation.Id = newId;
+
+        InMemoryDataStore.Reservations.Add(reservation);
+
+        return CreatedAtAction(
+            nameof(GetReservationById),
+            new { id = reservation.Id },
+            reservation
+        );
+    }
+
+    private static bool ReservationTimesOverlap(
+        TimeOnly newStartTime,
+        TimeOnly newEndTime,
+        TimeOnly existingStartTime,
+        TimeOnly existingEndTime)
+    {
+        return newStartTime < existingEndTime && newEndTime > existingStartTime;
+    }
 }
