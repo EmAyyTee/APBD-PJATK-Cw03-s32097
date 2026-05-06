@@ -56,4 +56,65 @@ public class RoomsController : ControllerBase
 
         return Ok(rooms);
     }
+
+    [HttpPost]
+    public ActionResult<Room> CreateRoom([FromBody] Room room)
+    {
+        var newId = InMemoryDataStore.Rooms.Any()
+            ? InMemoryDataStore.Rooms.Max(existingRoom => existingRoom.Id) + 1
+            : 1;
+
+        room.Id = newId;
+
+        InMemoryDataStore.Rooms.Add(room);
+
+        return CreatedAtAction(
+            nameof(GetRoomById),
+            new { id = room.Id },
+            room
+        );
+    }
+
+    [HttpPut("{id:int}")]
+    public ActionResult<Room> UpdateRoom([FromRoute] int id, [FromBody] Room updatedRoom)
+    {
+        var room = InMemoryDataStore.Rooms.FirstOrDefault(existingRoom => existingRoom.Id == id);
+
+        if (room is null)
+        {
+            return NotFound($"Room with id {id} was not found.");
+        }
+
+        room.Name = updatedRoom.Name;
+        room.BuildingCode = updatedRoom.BuildingCode;
+        room.Floor = updatedRoom.Floor;
+        room.Capacity = updatedRoom.Capacity;
+        room.HasProjector = updatedRoom.HasProjector;
+        room.IsActive = updatedRoom.IsActive;
+
+        return Ok(room);
+    }
+
+    [HttpDelete("{id:int}")]
+    public IActionResult DeleteRoom([FromRoute] int id)
+    {
+        var room = InMemoryDataStore.Rooms.FirstOrDefault(existingRoom => existingRoom.Id == id);
+
+        if (room is null)
+        {
+            return NotFound($"Room with id {id} was not found.");
+        }
+
+        var hasReservations = InMemoryDataStore.Reservations
+            .Any(reservation => reservation.RoomId == id);
+
+        if (hasReservations)
+        {
+            return Conflict($"Room with id {id} cannot be deleted because it has reservations.");
+        }
+
+        InMemoryDataStore.Rooms.Remove(room);
+
+        return NoContent();
+    }
 }
